@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react'
-import './App.css'
+import React, { useRef, useEffect, useState } from 'react';
+import './App.css';
 
 const VOICES = [
   { id: 'en-GB-RyanNeural', label: 'MVoice_1', file: '/audio_all/en-GB-RyanNeural.mp3' },
@@ -22,224 +22,224 @@ const VOICES = [
   { id: 'en-AU-NeilNeural', label: 'MVoice_11', file: '/audio_all/en-AU-NeilNeural.mp3' },
   { id: 'en-CA-ClaraNeural', label: 'FVoice_8', file: '/audio_all/en-CA-ClaraNeural.mp3' },
   { id: 'en-CA-LiamNeural', label: 'MVoice_12', file: '/audio_all/en-CA-LiamNeural.mp3' }
-]
+];
 
 export default function App() {
-  const taRef = useRef(null)
-  const audioRef = useRef(null)
-  const [count, setCount] = useState(0)
-  if (filterOpen) document.addEventListener('mousedown', handleDocClick)
-  return () => document.removeEventListener('mousedown', handleDocClick)
-}, [filterOpen])
+  const taRef = useRef(null);
+  const audioRef = useRef(null);
+  const convertedAudioRef = useRef(null);
+  const filterRef = useRef(null);
 
-useEffect(() => {
-  if (taRef.current) {
-    taRef.current.style.height = 'auto'
-    taRef.current.style.height = Math.min(taRef.current.scrollHeight, window.innerHeight * 0.8) + 'px'
-    setCount(taRef.current.value ? taRef.current.value.replace(/ /g, '').length : 0)
-  }
-}, [])
+  const [count, setCount] = useState(0);
+  const [playing, setPlaying] = useState(null);
+  const [genderFilter, setGenderFilter] = useState('all');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [convertStatus, setConvertStatus] = useState('');
+  const [selectedVoice, setSelectedVoice] = useState(null);
+  const [convertedUrl, setConvertedUrl] = useState('');
+  const [user, setUser] = useState(null);
 
-function handleInput(e) {
-  const el = e.target
-  el.style.height = 'auto'
-  const max = window.innerHeight * 0.8
-  const newHeight = Math.min(el.scrollHeight, max)
-  el.style.height = newHeight + 'px'
-  setCount(el.value.replace(/ /g, '').length)
-}
+  const AUTH_API = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000/api';
+  const TTS_API = import.meta.env.VITE_TTS_API_URL || 'http://127.0.0.1:8000/generate';
 
-function clearText() {
-  if (taRef.current) {
-    taRef.current.value = ''
-    taRef.current.style.height = 'auto'
-    taRef.current.focus()
-    setCount(0)
-  }
-}
+  // Load logged-in user
+  useEffect(() => {
+    fetch(`${AUTH_API}/auth/me`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setUser(data.user))
+      .catch(() => setUser(null));
+  }, []);
 
-async function playVoice(voice) {
-  if (!audioRef.current) return
-  try {
-    setSelectedVoice(voice.id)
-    setPlaying(voice.id)
-    audioRef.current.src = voice.file
-    await audioRef.current.play()
-  } catch (err) {
-    console.error('play error', err)
-  }
-}
+  // Handle click outside filter
+  useEffect(() => {
+    const handleClick = e => {
+      if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false);
+    };
+    if (filterOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [filterOpen]);
 
-function togglePlay(voice) {
-  if (!audioRef.current) return
-  const srcMatches = audioRef.current.src && audioRef.current.src.includes(voice.file)
-  if (srcMatches) {
-    if (audioRef.current.paused) {
-      audioRef.current.play()
-      setPlaying(voice.id)
-    } else {
-      audioRef.current.pause()
-      setPlaying(null)
+  // Auto adjust textarea height
+  useEffect(() => {
+    if (taRef.current) {
+      taRef.current.style.height = 'auto';
+      taRef.current.style.height = Math.min(taRef.current.scrollHeight, window.innerHeight * 0.8) + 'px';
+      setCount(taRef.current.value ? taRef.current.value.replace(/ /g, '').length : 0);
     }
-  } else {
-    setSelectedVoice(voice.id)
-    audioRef.current.src = voice.file
-    audioRef.current.play()
-    setPlaying(voice.id)
-  }
-}
+  }, []);
 
-function handleAudioEnded() {
-  setPlaying(null)
-}
+  const handleInput = e => {
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, window.innerHeight * 0.8) + 'px';
+    setCount(el.value.replace(/ /g, '').length);
+  };
 
-async function handleConvert() {
-  const text = taRef.current?.value.trim()
-  if (!text) return setConvertStatus('Please enter text')
-  if (!selectedVoice) return setConvertStatus('Please select a voice')
-
-  setConverting(true)
-  setConvertStatus('Converting...')
-
-  try {
-    const res = await fetch(`${TTS_API_URL}/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voice: selectedVoice }),
-      credentials: 'include'
-    })
-
-    if (res.ok) {
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      setConvertedUrl(url)
-      setConvertStatus('Converted successfully!')
-    } else {
-      setConvertStatus('Conversion failed')
+  const clearText = () => {
+    if (taRef.current) {
+      taRef.current.value = '';
+      taRef.current.style.height = 'auto';
+      taRef.current.focus();
+      setCount(0);
     }
-  } catch (err) {
-    setConvertStatus('Network error')
-  }
-  setConverting(false)
-}
+  };
 
-return (
-  <div className="app-root">
-    {/* TOP RIGHT LOGIN */}
-    <div style={{
-      position: 'absolute', top: 16, right: 16, zIndex: 1000,
-      background: 'white', padding: '12px 20px', borderRadius: '50px',
-      boxShadow: '0 8px 30px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 14
-    }}>
-      {user ? (
-        <>
-          <img src={user.photo} alt="profile" style={{ width: 40, height: 40, borderRadius: '50%' }} />
-          <span style={{ fontWeight: 600 }}>Hi, {user.name.split(' ')[0]}</span>
-          <a href={`${AUTH_API_URL}/api/auth/logout`} style={{ color: '#d32f2f', textDecoration: 'none' }}>Logout</a>
-        </>
-      ) : (
-        <a href={`${AUTH_API_URL}/api/auth/google`} style={{ textDecoration: 'none' }}>
-          <button style={{
-            background: '#4285f4', color: 'white', border: 'none', padding: '10px 24px',
-            borderRadius: '25px', fontWeight: '600', cursor: 'pointer'
-          }}>
-            Login with Google
-          </button>
-        </a>
-      )}
-    </div>
+  const togglePlay = voice => {
+    if (!audioRef.current) return;
+    const srcMatches = audioRef.current.src.includes(voice.file);
+    if (srcMatches) {
+      if (audioRef.current.paused) audioRef.current.play(), setPlaying(voice.id);
+      else audioRef.current.pause(), setPlaying(null);
+    } else {
+      audioRef.current.src = voice.file;
+      audioRef.current.play();
+      setPlaying(voice.id);
+      setSelectedVoice(voice.id);
+    }
+  };
 
-    {/* LEFT COLUMN */}
-    <div className="left-col">
-      <h1 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '60px' }}>Text to Speech</h1>
-      <div className="card">
-        <textarea
-          ref={taRef}
-          placeholder="Type your text here..."
-          onInput={handleInput}
-          className="input-area"
-          style={{ paddingBottom: 64 }}
-        />
+  const handleAudioEnded = () => setPlaying(null);
 
-        <div className="controls">
-          <div className="char-count">{count} characters</div>
-          <div className="action-row">
-            <button type="button" onClick={clearText} disabled={converting} className="btn btn-ghost">Clear</button>
-            {user ? (
-              <button type="button" onClick={handleConvert} disabled={converting} className="btn btn-primary">
-                {converting ? 'Converting...' : 'Convert'}
-              </button>
-            ) : (
-              <button type="button" onClick={() => window.location.href = `${AUTH_API_URL}/api/auth/google`} className="btn btn-primary">
-                Login to Convert
-              </button>
-            )}
-          </div>
-        </div>
+  const handleConvert = async () => {
+    const text = taRef.current?.value.trim();
+    if (!text) return setConvertStatus('Please enter text');
+    if (!selectedVoice) return setConvertStatus('Please select a voice');
 
-        <div className="status">
-          {convertStatus && <div style={{ marginBottom: 8 }}>{convertStatus}</div>}
-          {convertedUrl && (
-            <div className="result-row">
-              <audio controls src={convertedUrl} ref={convertedAudioRef} style={{ width: '100%' }} />
-              <a href={convertedUrl} download="TextToSpeechconverted.mp3" className="download-link">Download</a>
-            </div>
-          )}
-        </div>
+    setConverting(true);
+    setConvertStatus('Converting...');
+    try {
+      const res = await fetch(TTS_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: selectedVoice }),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        setConvertedUrl(url);
+        setConvertStatus('Converted successfully!');
+      } else setConvertStatus('Conversion failed');
+    } catch (err) {
+      setConvertStatus('Network error');
+    }
+    setConverting(false);
+  };
+
+  return (
+    <div className="app-root">
+      {/* TOP RIGHT LOGIN */}
+      <div style={{
+        position: 'absolute', top: 16, right: 16, zIndex: 1000,
+        background: 'white', padding: '12px 20px', borderRadius: '50px',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 14
+      }}>
+        {user ? (
+          <>
+            <img src={user.photo} alt="profile" style={{ width: 40, height: 40, borderRadius: '50%' }} />
+            <span style={{ fontWeight: 600 }}>Hi, {user.name.split(' ')[0]}</span>
+            <a href={`${AUTH_API}/auth/logout`} style={{ color: '#d32f2f', textDecoration: 'none' }}>Logout</a>
+          </>
+        ) : (
+          <a href={`${AUTH_API}/auth/google`} style={{ textDecoration: 'none' }}>
+            <button style={{
+              background: '#4285f4', color: 'white', border: 'none', padding: '10px 24px',
+              borderRadius: '25px', fontWeight: '600', cursor: 'pointer'
+            }}>
+              Login with Google
+            </button>
+          </a>
+        )}
       </div>
-    </div>
 
-    {/* RIGHT COLUMN */}
-    <div className="right-col">
-      <div className="card">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <div className="voice-header">
-            <h3>Voice samples</h3>
-            <div className="sub">Click a card to play the sample</div>
+      {/* LEFT COLUMN */}
+      <div className="left-col">
+        <h1 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '60px' }}>Text to Speech</h1>
+        <div className="card">
+          <textarea
+            ref={taRef}
+            placeholder="Type your text here..."
+            onInput={handleInput}
+            className="input-area"
+            style={{ paddingBottom: 64 }}
+          />
+          <div className="controls">
+            <div className="char-count">{count} characters</div>
+            <div className="action-row">
+              <button type="button" onClick={clearText} disabled={converting} className="btn btn-ghost">Clear</button>
+              {user ? (
+                <button type="button" onClick={handleConvert} disabled={converting} className="btn btn-primary">
+                  {converting ? 'Converting...' : 'Convert'}
+                </button>
+              ) : (
+                <button type="button" onClick={() => window.location.href = `${AUTH_API}/auth/google`} className="btn btn-primary">
+                  Login to Convert
+                </button>
+              )}
+            </div>
           </div>
-
-          <div style={{ position: 'relative' }} ref={filterRef}>
-            <button type="button" onClick={() => setFilterOpen(open => !open)} aria-expanded={filterOpen} className="filter-btn">Filter ▾</button>
-
-            {filterOpen && (
-              <div className="filter-menu">
-                <button type="button" onClick={() => { setGenderFilter('male'); setFilterOpen(false) }} className={genderFilter === 'male' ? 'active' : ''}>Male</button>
-                <button type="button" onClick={() => { setGenderFilter('female'); setFilterOpen(false) }} className={genderFilter === 'female' ? 'active' : ''}>Female</button>
-                <button type="button" onClick={() => { setGenderFilter('all'); setFilterOpen(false) }}>All</button>
+          <div className="status">
+            {convertStatus && <div style={{ marginBottom: 8 }}>{convertStatus}</div>}
+            {convertedUrl && (
+              <div className="result-row">
+                <audio controls src={convertedUrl} ref={convertedAudioRef} style={{ width: '100%' }} />
+                <a href={convertedUrl} download="TextToSpeechconverted.mp3" className="download-link">Download</a>
               </div>
             )}
           </div>
         </div>
-        <div className="voices-grid">
-          {VOICES.filter(v => {
-            if (genderFilter === 'all') return true
-            if (genderFilter === 'male') return v.label && v.label.startsWith('MVoice')
-            if (genderFilter === 'female') return v.label && v.label.startsWith('FVoice')
-            return true
-          }).map(v => (
-            <div
-              key={v.id}
-              role="button"
-              tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') togglePlay(v) }}
-              onClick={() => setSelectedVoice(v.id)}
-              className={`voice-card ${selectedVoice === v.id ? 'selected' : ''}`}
-            >
-              <div className="label">{v.label}</div>
-              <button
-                onClick={e => { e.stopPropagation(); togglePlay(v) }}
-                aria-label={playing === v.id ? 'Pause' : 'Play'}
-                className="icon-btn"
-              >
-                {playing === v.id ? '❚❚' : '▶'}
-              </button>
+      </div>
+
+      {/* RIGHT COLUMN */}
+      <div className="right-col">
+        <div className="card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div className="voice-header">
+              <h3>Voice samples</h3>
+              <div className="sub">Click a card to play the sample</div>
             </div>
-          ))}
+            <div style={{ position: 'relative' }} ref={filterRef}>
+              <button type="button" onClick={() => setFilterOpen(open => !open)} aria-expanded={filterOpen} className="filter-btn">Filter ▾</button>
+              {filterOpen && (
+                <div className="filter-menu">
+                  <button type="button" onClick={() => { setGenderFilter('male'); setFilterOpen(false); }} className={genderFilter === 'male' ? 'active' : ''}>Male</button>
+                  <button type="button" onClick={() => { setGenderFilter('female'); setFilterOpen(false); }} className={genderFilter === 'female' ? 'active' : ''}>Female</button>
+                  <button type="button" onClick={() => { setGenderFilter('all'); setFilterOpen(false); }}>All</button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="voices-grid">
+            {VOICES.filter(v => {
+              if (genderFilter === 'all') return true;
+              if (genderFilter === 'male') return v.label.startsWith('MVoice');
+              if (genderFilter === 'female') return v.label.startsWith('FVoice');
+              return true;
+            }).map(v => (
+              <div
+                key={v.id}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') togglePlay(v); }}
+                onClick={() => setSelectedVoice(v.id)}
+                className={`voice-card ${selectedVoice === v.id ? 'selected' : ''}`}
+              >
+                <div className="label">{v.label}</div>
+                <button
+                  onClick={e => { e.stopPropagation(); togglePlay(v); }}
+                  aria-label={playing === v.id ? 'Pause' : 'Play'}
+                  className="icon-btn"
+                >
+                  {playing === v.id ? '❚❚' : '▶'}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
 
-    <audio ref={audioRef} onEnded={handleAudioEnded} style={{ display: 'none' }} />
-  </div>
-)
+      <audio ref={audioRef} onEnded={handleAudioEnded} style={{ display: 'none' }} />
+    </div>
+  );
 }
