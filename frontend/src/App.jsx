@@ -40,12 +40,16 @@ export default function App() {
   const [convertedUrl, setConvertedUrl] = useState('');
   const [user, setUser] = useState(null);
 
-  let AUTH_API = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000/api';
+  let AUTH_API = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000';
   if (AUTH_API && !AUTH_API.startsWith('http')) {
     AUTH_API = `https://${AUTH_API}`;
   }
+  // Add /api suffix if not already present
+  if (!AUTH_API.endsWith('/api')) {
+    AUTH_API = `${AUTH_API}/api`;
+  }
 
-  let TTS_API = import.meta.env.VITE_TTS_API_URL || 'http://127.0.0.1:8000/generate';
+  let TTS_API = import.meta.env.VITE_TTS_API_URL || 'http://127.0.0.1:8000';
   if (TTS_API && !TTS_API.startsWith('http')) {
     TTS_API = `https://${TTS_API}`;
   }
@@ -116,7 +120,7 @@ export default function App() {
     setConverting(true);
     setConvertStatus('Converting...');
     try {
-      const res = await fetch(TTS_API, {
+      const res = await fetch(`${TTS_API}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, voice: selectedVoice }),
