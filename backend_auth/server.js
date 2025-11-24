@@ -38,8 +38,7 @@ app.use(
       secure: true, // Always use secure in production
       httpOnly: true,
       sameSite: 'none', // Required for cross-domain
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      domain: '.onrender.com' // Share cookies across subdomains
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     }
   })
 );
