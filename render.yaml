@@ -26,7 +26,7 @@ services:
         fromService:
           type: web
           name: text-speech-frontend
-          property: url
+          property: host
       - key: MONGO_URI
         sync: false
       - key: GOOGLE_CLIENT_ID
@@ -50,9 +50,9 @@ services:
         fromService:
           type: web
           name: text-speech-backend
-          property: url
+          property: host
       - key: VITE_AUTH_API_URL
         fromService:
           type: web
           name: text-speech-auth
-          property: url
+          property: host

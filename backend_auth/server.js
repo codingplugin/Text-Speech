@@ -9,7 +9,10 @@ require('dotenv').config();
 
 const app = express();
 
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+let CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+if (CLIENT_URL && !CLIENT_URL.startsWith('http')) {
+  CLIENT_URL = `https://${CLIENT_URL}`;
+}
 
 // ⭐ Mongoose connection
 mongoose
@@ -108,7 +111,7 @@ app.get(
 app.get('/api/auth/me', (req, res) => res.json({ user: req.user || null }));
 
 app.get('/api/auth/logout', (req, res) => {
-  req.logout(() => {});
+  req.logout(() => { });
   res.redirect(CLIENT_URL);
 });
 

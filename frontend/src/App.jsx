@@ -28,99 +28,72 @@ export default function App() {
   const taRef = useRef(null)
   const audioRef = useRef(null)
   const [count, setCount] = useState(0)
-  const [playing, setPlaying] = useState(null)
-  const [genderFilter, setGenderFilter] = useState('all')
-  const [filterOpen, setFilterOpen] = useState(false)
-  const filterRef = useRef(null)
-  const [converting, setConverting] = useState(false)
-  const [convertStatus, setConvertStatus] = useState('')
-  const [selectedVoice, setSelectedVoice] = useState(null)
-  const [convertedUrl, setConvertedUrl] = useState('')
-  const convertedAudioRef = useRef(null)
+  if (filterOpen) document.addEventListener('mousedown', handleDocClick)
+  return () => document.removeEventListener('mousedown', handleDocClick)
+}, [filterOpen])
 
-  const [user, setUser] = useState(null)
-
-  const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000';
-  const TTS_API_URL = import.meta.env.VITE_TTS_API_URL || 'http://127.0.0.1:8000';
-
-  // Load user
-  useEffect(() => {
-    fetch(`${AUTH_API_URL}/api/auth/me`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => setUser(d.user))
-      .catch(() => setUser(null))
-  }, [])
-
-  useEffect(() => {
-    function handleDocClick(e) {
-      if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false)
-    }
-    if (filterOpen) document.addEventListener('mousedown', handleDocClick)
-    return () => document.removeEventListener('mousedown', handleDocClick)
-  }, [filterOpen])
-
-  useEffect(() => {
-    if (taRef.current) {
-      taRef.current.style.height = 'auto'
-      taRef.current.style.height = Math.min(taRef.current.scrollHeight, window.innerHeight * 0.8) + 'px'
-      setCount(taRef.current.value ? taRef.current.value.replace(/ /g, '').length : 0)
-    }
-  }, [])
-
-  function handleInput(e) {
-    const el = e.target
-    el.style.height = 'auto'
-    const max = window.innerHeight * 0.8
-    const newHeight = Math.min(el.scrollHeight, max)
-    el.style.height = newHeight + 'px'
-    setCount(el.value.replace(/ /g, '').length)
+useEffect(() => {
+  if (taRef.current) {
+    taRef.current.style.height = 'auto'
+    taRef.current.style.height = Math.min(taRef.current.scrollHeight, window.innerHeight * 0.8) + 'px'
+    setCount(taRef.current.value ? taRef.current.value.replace(/ /g, '').length : 0)
   }
+}, [])
 
-  function clearText() {
-    if (taRef.current) {
-      taRef.current.value = ''
-      taRef.current.style.height = 'auto'
-      taRef.current.focus()
-      setCount(0)
-    }
+function handleInput(e) {
+  const el = e.target
+  el.style.height = 'auto'
+  const max = window.innerHeight * 0.8
+  const newHeight = Math.min(el.scrollHeight, max)
+  el.style.height = newHeight + 'px'
+  setCount(el.value.replace(/ /g, '').length)
+}
+
+function clearText() {
+  if (taRef.current) {
+    taRef.current.value = ''
+    taRef.current.style.height = 'auto'
+    taRef.current.focus()
+    setCount(0)
   }
+}
 
-  async function playVoice(voice) {
-    if (!audioRef.current) return
-    try {
-      setSelectedVoice(voice.id)
-      setPlaying(voice.id)
-      audioRef.current.src = voice.file
-      await audioRef.current.play()
-    } catch (err) {
-      console.error('play error', err)
-    }
+async function playVoice(voice) {
+  if (!audioRef.current) return
+  try {
+    setSelectedVoice(voice.id)
+    setPlaying(voice.id)
+    audioRef.current.src = voice.file
+    await audioRef.current.play()
+  } catch (err) {
+    console.error('play error', err)
   }
+}
 
-  function togglePlay(voice) {
-    if (!audioRef.current) return
-    const srcMatches = audioRef.current.src && audioRef.current.src.includes(voice.file)
-    if (srcMatches) {
-      if (audioRef.current.paused) {
-        audioRef.current.play()
-        setPlaying(voice.id)
-      } else {
-        audioRef.current.pause()
-        setPlaying(null)
-      }
-    } else {
-      setSelectedVoice(voice.id)
-      audioRef.current.src = voice.file
+function togglePlay(voice) {
+  if (!audioRef.current) return
+  const srcMatches = audioRef.current.src && audioRef.current.src.includes(voice.file)
+  if (srcMatches) {
+    if (audioRef.current.paused) {
       audioRef.current.play()
       setPlaying(voice.id)
+    } else {
+      audioRef.current.pause()
+      setPlaying(null)
     }
+  } else {
+    setSelectedVoice(voice.id)
+    audioRef.current.src = voice.file
+    audioRef.current.play()
+    setPlaying(voice.id)
   }
+}
 
-  function handleAudioEnded() {
-    setPlaying(null)
-  }
+function handleAudioEnded() {
+  setPlaying(null)
+}
 
-  async function handleConvert() {
+async function handleConvert() {
   const text = taRef.current?.value.trim()
   if (!text) return setConvertStatus('Please enter text')
   if (!selectedVoice) return setConvertStatus('Please select a voice')
@@ -150,123 +123,123 @@ export default function App() {
   setConverting(false)
 }
 
-  return (
-    <div className="app-root">
-      {/* TOP RIGHT LOGIN */}
-      <div style={{
-        position: 'absolute', top: 16, right: 16, zIndex: 1000,
-        background: 'white', padding: '12px 20px', borderRadius: '50px',
-        boxShadow: '0 8px 30px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 14
-      }}>
-        {user ? (
-          <>
-            <img src={user.photo} alt="profile" style={{ width: 40, height: 40, borderRadius: '50%' }} />
-            <span style={{ fontWeight: 600 }}>Hi, {user.name.split(' ')[0]}</span>
-            <a href={`${AUTH_API_URL}/api/auth/logout`} style={{ color: '#d32f2f', textDecoration: 'none' }}>Logout</a>
-          </>
-        ) : (
-          <a href={`${AUTH_API_URL}/api/auth/google`} style={{ textDecoration: 'none' }}>
-            <button style={{
-              background: '#4285f4', color: 'white', border: 'none', padding: '10px 24px',
-              borderRadius: '25px', fontWeight: '600', cursor: 'pointer'
-            }}>
-              Login with Google
-            </button>
-          </a>
-        )}
-      </div>
+return (
+  <div className="app-root">
+    {/* TOP RIGHT LOGIN */}
+    <div style={{
+      position: 'absolute', top: 16, right: 16, zIndex: 1000,
+      background: 'white', padding: '12px 20px', borderRadius: '50px',
+      boxShadow: '0 8px 30px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 14
+    }}>
+      {user ? (
+        <>
+          <img src={user.photo} alt="profile" style={{ width: 40, height: 40, borderRadius: '50%' }} />
+          <span style={{ fontWeight: 600 }}>Hi, {user.name.split(' ')[0]}</span>
+          <a href={`${AUTH_API_URL}/api/auth/logout`} style={{ color: '#d32f2f', textDecoration: 'none' }}>Logout</a>
+        </>
+      ) : (
+        <a href={`${AUTH_API_URL}/api/auth/google`} style={{ textDecoration: 'none' }}>
+          <button style={{
+            background: '#4285f4', color: 'white', border: 'none', padding: '10px 24px',
+            borderRadius: '25px', fontWeight: '600', cursor: 'pointer'
+          }}>
+            Login with Google
+          </button>
+        </a>
+      )}
+    </div>
 
-      {/* LEFT COLUMN */}
-      <div className="left-col">
-        <h1 style={{ textAlign: 'center', marginBottom: '10px', fontSize:'60px' }}>Text to Speech</h1>
-        <div className="card">
-          <textarea
-            ref={taRef}
-            placeholder="Type your text here..."
-            onInput={handleInput}
-            className="input-area"
-            style={{ paddingBottom: 64 }}
-          />
+    {/* LEFT COLUMN */}
+    <div className="left-col">
+      <h1 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '60px' }}>Text to Speech</h1>
+      <div className="card">
+        <textarea
+          ref={taRef}
+          placeholder="Type your text here..."
+          onInput={handleInput}
+          className="input-area"
+          style={{ paddingBottom: 64 }}
+        />
 
-          <div className="controls">
-            <div className="char-count">{count} characters</div>
-            <div className="action-row">
-              <button type="button" onClick={clearText} disabled={converting} className="btn btn-ghost">Clear</button>
-              {user ? (
-                <button type="button" onClick={handleConvert} disabled={converting} className="btn btn-primary">
-                  {converting ? 'Converting...' : 'Convert'}
-                </button>
-              ) : (
-                <button type="button" onClick={() => window.location.href = `${AUTH_API_URL}/api/auth/google`} className="btn btn-primary">
-                  Login to Convert
-                </button>
-              )}
+        <div className="controls">
+          <div className="char-count">{count} characters</div>
+          <div className="action-row">
+            <button type="button" onClick={clearText} disabled={converting} className="btn btn-ghost">Clear</button>
+            {user ? (
+              <button type="button" onClick={handleConvert} disabled={converting} className="btn btn-primary">
+                {converting ? 'Converting...' : 'Convert'}
+              </button>
+            ) : (
+              <button type="button" onClick={() => window.location.href = `${AUTH_API_URL}/api/auth/google`} className="btn btn-primary">
+                Login to Convert
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="status">
+          {convertStatus && <div style={{ marginBottom: 8 }}>{convertStatus}</div>}
+          {convertedUrl && (
+            <div className="result-row">
+              <audio controls src={convertedUrl} ref={convertedAudioRef} style={{ width: '100%' }} />
+              <a href={convertedUrl} download="TextToSpeechconverted.mp3" className="download-link">Download</a>
             </div>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* RIGHT COLUMN */}
+    <div className="right-col">
+      <div className="card">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div className="voice-header">
+            <h3>Voice samples</h3>
+            <div className="sub">Click a card to play the sample</div>
           </div>
 
-          <div className="status">
-            {convertStatus && <div style={{ marginBottom: 8 }}>{convertStatus}</div>}
-            {convertedUrl && (
-              <div className="result-row">
-                <audio controls src={convertedUrl} ref={convertedAudioRef} style={{ width: '100%' }} />
-                <a href={convertedUrl} download="TextToSpeechconverted.mp3" className="download-link">Download</a>
+          <div style={{ position: 'relative' }} ref={filterRef}>
+            <button type="button" onClick={() => setFilterOpen(open => !open)} aria-expanded={filterOpen} className="filter-btn">Filter ▾</button>
+
+            {filterOpen && (
+              <div className="filter-menu">
+                <button type="button" onClick={() => { setGenderFilter('male'); setFilterOpen(false) }} className={genderFilter === 'male' ? 'active' : ''}>Male</button>
+                <button type="button" onClick={() => { setGenderFilter('female'); setFilterOpen(false) }} className={genderFilter === 'female' ? 'active' : ''}>Female</button>
+                <button type="button" onClick={() => { setGenderFilter('all'); setFilterOpen(false) }}>All</button>
               </div>
             )}
           </div>
         </div>
-      </div>
-
-      {/* RIGHT COLUMN */}
-      <div className="right-col">
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div className="voice-header">
-              <h3>Voice samples</h3>
-              <div className="sub">Click a card to play the sample</div>
-            </div>
-
-            <div style={{ position: 'relative' }} ref={filterRef}>
-              <button type="button" onClick={() => setFilterOpen(open => !open)} aria-expanded={filterOpen} className="filter-btn">Filter ▾</button>
-
-              {filterOpen && (
-                <div className="filter-menu">
-                  <button type="button" onClick={() => { setGenderFilter('male'); setFilterOpen(false) }} className={genderFilter === 'male' ? 'active' : ''}>Male</button>
-                  <button type="button" onClick={() => { setGenderFilter('female'); setFilterOpen(false) }} className={genderFilter === 'female' ? 'active' : ''}>Female</button>
-                  <button type="button" onClick={() => { setGenderFilter('all'); setFilterOpen(false) }}>All</button>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="voices-grid">
-            {VOICES.filter(v => {
-              if (genderFilter === 'all') return true
-              if (genderFilter === 'male') return v.label && v.label.startsWith('MVoice')
-              if (genderFilter === 'female') return v.label && v.label.startsWith('FVoice')
-              return true
-            }).map(v => (
-              <div
-                key={v.id}
-                role="button"
-                tabIndex={0}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') togglePlay(v) }}
-                onClick={() => setSelectedVoice(v.id)}
-                className={`voice-card ${selectedVoice === v.id ? 'selected' : ''}`}
+        <div className="voices-grid">
+          {VOICES.filter(v => {
+            if (genderFilter === 'all') return true
+            if (genderFilter === 'male') return v.label && v.label.startsWith('MVoice')
+            if (genderFilter === 'female') return v.label && v.label.startsWith('FVoice')
+            return true
+          }).map(v => (
+            <div
+              key={v.id}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') togglePlay(v) }}
+              onClick={() => setSelectedVoice(v.id)}
+              className={`voice-card ${selectedVoice === v.id ? 'selected' : ''}`}
+            >
+              <div className="label">{v.label}</div>
+              <button
+                onClick={e => { e.stopPropagation(); togglePlay(v) }}
+                aria-label={playing === v.id ? 'Pause' : 'Play'}
+                className="icon-btn"
               >
-                <div className="label">{v.label}</div>
-                <button
-                  onClick={e => { e.stopPropagation(); togglePlay(v) }}
-                  aria-label={playing === v.id ? 'Pause' : 'Play'}
-                  className="icon-btn"
-                >
-                  {playing === v.id ? '❚❚' : '▶'}
-                </button>
-              </div>
-            ))}
-          </div>
+                {playing === v.id ? '❚❚' : '▶'}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
-
-      <audio ref={audioRef} onEnded={handleAudioEnded} style={{ display: 'none' }} />
     </div>
-  )
+
+    <audio ref={audioRef} onEnded={handleAudioEnded} style={{ display: 'none' }} />
+  </div>
+)
 }
