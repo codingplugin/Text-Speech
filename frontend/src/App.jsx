@@ -40,8 +40,15 @@ export default function App() {
   const [convertedUrl, setConvertedUrl] = useState('');
   const [user, setUser] = useState(null);
 
-  const AUTH_API = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000/api';
-  const TTS_API = import.meta.env.VITE_TTS_API_URL || 'http://127.0.0.1:8000/generate';
+  let AUTH_API = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000/api';
+  if (AUTH_API && !AUTH_API.startsWith('http')) {
+    AUTH_API = `https://${AUTH_API}`;
+  }
+
+  let TTS_API = import.meta.env.VITE_TTS_API_URL || 'http://127.0.0.1:8000/generate';
+  if (TTS_API && !TTS_API.startsWith('http')) {
+    TTS_API = `https://${TTS_API}`;
+  }
 
   // Load logged-in user
   useEffect(() => {
