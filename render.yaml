@@ -11,14 +11,8 @@ services:
         value: production
       - key: CLIENT_URL
         fromService:
-          type: static_siteservices:
-            - type: static_site
-              name: test-static-site
-              rootDir: frontend
-              buildCommand: npm install && npm run build
-              publishDir: dist
-          
-          name: text-speech-frontend # Must match the name of the frontend service below
+          type: static_site
+          name: text-speech-frontend
           property: url
       # Secrets must be added in the Render dashboard after creation
       - key: MONGO_URI
@@ -40,7 +34,7 @@ services:
       - key: VITE_AUTH_API_URL
         fromService:
           type: web
-          name: text-speech-backend # Must match the name of the backend service above
+          name: text-speech-backend
           property: url
-      - key: VITE_TTS_API_URL # You will need to update this manually if you deploy the TTS service
+      - key: VITE_TTS_API_URL
         value: http://127.0.0.1:8000
