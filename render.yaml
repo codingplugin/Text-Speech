@@ -11,7 +11,13 @@ services:
         value: production
       - key: CLIENT_URL
         fromService:
-          type: static_site
+          type: static_siteservices:
+            - type: static_site
+              name: test-static-site
+              rootDir: frontend
+              buildCommand: npm install && npm run build
+              publishDir: dist
+          
           name: text-speech-frontend # Must match the name of the frontend service below
           property: url
       # Secrets must be added in the Render dashboard after creation
