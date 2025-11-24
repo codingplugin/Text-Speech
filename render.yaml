@@ -1,19 +1,35 @@
 services:
-  # ----------------------------
-  # Backend Service (Node.js API)
-  # ----------------------------
+  # ---------------------------------------------------
+  # 1. TTS BACKEND (Python)
+  # ---------------------------------------------------
   - type: web
     name: text-speech-backend
-    env: node
-    rootDir: backend_auth
-    buildCommand: npm install
-    startCommand: node server.js
+    plan: free
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn backend.server:app
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: CLIENT_URL
-        value: https://your-frontend-render-url.onrender.com
-      # Secrets (add values in Render dashboard)
+        fromService:
+          type: web
+          name: text-speech-frontend
+          property: url
+
+  # ---------------------------------------------------
+  # 2. AUTH BACKEND (Node.js)
+  # ---------------------------------------------------
+  - type: web
+    name: text-speech-auth
+    plan: free
+    runtime: node
+    buildCommand: cd backend_auth && npm install
+    startCommand: cd backend_auth && npm start
+    envVars:
+      - key: CLIENT_URL
+        fromService:
+          type: web
+          name: text-speech-frontend
+          property: url
       - key: MONGO_URI
         sync: false
       - key: GOOGLE_CLIENT_ID
@@ -21,18 +37,25 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: SESSION_SECRET
-        sync: false
+        generateValue: true
 
-  # ----------------------------
-  # Frontend Service (React Static Site)
-  # ----------------------------
-  - type: static_site
+  # ---------------------------------------------------
+  # 3. FRONTEND (Static Site)
+  # ---------------------------------------------------
+  - type: static
     name: text-speech-frontend
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    publishDir: dist
+    plan: free
+    runtime: node
+    buildCommand: cd frontend && npm install && npm run build
+    publishDir: frontend/dist
     envVars:
-      - key: VITE_AUTH_API_URL
-        value: https://your-backend-render-url.onrender.com
       - key: VITE_TTS_API_URL
-        value: http://127.0.0.1:8000
+        fromService:
+          type: web
+          name: text-speech-backend
+          property: url
+      - key: VITE_AUTH_API_URL
+        fromService:
+          type: web
+          name: text-speech-auth
+          property: url

@@ -113,7 +113,8 @@ app.get('/api/auth/logout', (req, res) => {
 });
 
 // 🚀 Start Server
-app.listen(5000, () => {
-  console.log('Auth Server → http://localhost:5000');
-  console.log('Frontend URL → http://localhost:5173');
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Auth Server → http://localhost:${PORT}`);
+  console.log(`Frontend URL → ${CLIENT_URL}`);
 });

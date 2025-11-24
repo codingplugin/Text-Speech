@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import edge_tts
 import tempfile
@@ -6,7 +7,8 @@ import os
 import time
 
 app = Flask(__name__)
-CORS(app, origins="http://localhost:5173", supports_credentials=True)
+CLIENT_URL = os.environ.get('CLIENT_URL', "http://localhost:5173")
+CORS(app, origins=CLIENT_URL, supports_credentials=True)
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -51,5 +53,6 @@ def generate():
         return jsonify({"error": "Conversion failed"}), 500
 
 if __name__ == '__main__':
-    print("TTS SERVER 100% WORKING → http://127.0.0.1:8000")
-    app.run(host='0.0.0.0', port=8000, debug=False)
+    port = int(os.environ.get('PORT', 8000))
+    print(f"TTS SERVER 100% WORKING → http://0.0.0.0:{port}")
+    app.run(host='0.0.0.0', port=port, debug=False)
