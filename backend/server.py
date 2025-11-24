@@ -1,3 +1,36 @@
+from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
+import edge_tts
+import tempfile
+import os
+import time
+
+app = Flask(__name__)
+CLIENT_URL = os.environ.get('CLIENT_URL', "http://localhost:5173")
+if CLIENT_URL and not CLIENT_URL.startswith('http'):
+    CLIENT_URL = f"https://{CLIENT_URL}"
+CORS(app, origins=CLIENT_URL, supports_credentials=True)
+
+@app.route('/generate', methods=['POST'])
+def generate():
+    try:
+        data = request.get_json()
+        text = data.get('text', '').strip()
+        voice = data.get('voice', '')
+
+        if not text or not voice:
+            return jsonify({"error": "Text and voice required"}), 400
+
+        # Create temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
+        temp_path = temp_file.name
+        temp_file.close()
+
+        # Generate audio using correct method
+        communicate = edge_tts.Communicate(text, voice)
+        communicate.save_sync(temp_path)  # This works perfectly
+
+        # Send file and delete immediately
         filename = f"tts-{voice}-{int(time.time())}.mp3"
         response = send_file(
             temp_path,
