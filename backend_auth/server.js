@@ -24,16 +24,22 @@ mongoose
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Trust proxy - required for secure cookies on Render
+app.set('trust proxy', 1);
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    proxy: true, // Required for Render
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: true, // Always use secure in production
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      sameSite: 'none', // Required for cross-domain
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      domain: '.onrender.com' // Share cookies across subdomains
     }
   })
 );
