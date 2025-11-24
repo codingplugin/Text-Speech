@@ -11,7 +11,7 @@ services:
     envVars:
       - key: CLIENT_URL
         fromService:
-          type: web
+          type: static
           name: text-speech-frontend
           property: url
 
@@ -27,7 +27,7 @@ services:
     envVars:
       - key: CLIENT_URL
         fromService:
-          type: web
+          type: static
           name: text-speech-frontend
           property: url
       - key: MONGO_URI
@@ -45,7 +45,6 @@ services:
   - type: static
     name: text-speech-frontend
     plan: free
-    runtime: node
     buildCommand: cd frontend && npm install && npm run build
     publishDir: frontend/dist
     envVars:
