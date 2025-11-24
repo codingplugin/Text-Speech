@@ -53,12 +53,16 @@ const User = mongoose.model(
 );
 
 // 🔐 Google OAuth Strategy
+const CALLBACK_URL = process.env.NODE_ENV === 'production'
+  ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/api/auth/google/callback`
+  : 'http://localhost:5000/api/auth/google/callback';
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/api/auth/google/callback'
+      callbackURL: CALLBACK_URL
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
