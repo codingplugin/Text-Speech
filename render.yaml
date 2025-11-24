@@ -4,26 +4,29 @@ services:
   # ---------------------------------------------------
   - type: web
     name: text-speech-backend
+    env: python
     plan: free
-    runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn backend.server:app
     envVars:
       - key: CLIENT_URL
-        value: "*" # Allow all for now to avoid circular dependency/type issues. Update manually if needed.
+        value: "*" 
 
   # ---------------------------------------------------
   # 2. AUTH BACKEND (Node.js)
   # ---------------------------------------------------
   - type: web
     name: text-speech-auth
+    env: node
     plan: free
-    runtime: node
     buildCommand: cd backend_auth && npm install
     startCommand: cd backend_auth && npm start
     envVars:
       - key: CLIENT_URL
-        value: "https://text-speech-frontend.onrender.com" # Placeholder/Predictable URL. User may need to update.
+        fromService:
+          type: web
+          name: text-speech-frontend
+          property: url
       - key: MONGO_URI
         sync: false
       - key: GOOGLE_CLIENT_ID
@@ -33,13 +36,15 @@ services:
       - key: SESSION_SECRET
         generateValue: true
 
-# ---------------------------------------------------
-# 3. FRONTEND (Static Site)
-# ---------------------------------------------------
-staticSites:
-  - name: text-speech-frontend
+  # ---------------------------------------------------
+  # 3. FRONTEND (Static Site)
+  # ---------------------------------------------------
+  - type: web
+    name: text-speech-frontend
+    env: static
+    plan: free
     buildCommand: cd frontend && npm install && npm run build
-    publishDir: frontend/dist
+    staticPublishPath: frontend/dist
     envVars:
       - key: VITE_TTS_API_URL
         fromService:
