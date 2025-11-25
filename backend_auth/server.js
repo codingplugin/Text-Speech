@@ -7,6 +7,15 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+// 🔍 Debug: Check critical environment variables
+const requiredEnv = ['MONGO_URI', 'SESSION_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'];
+const missingEnv = requiredEnv.filter(key => !process.env[key]);
+
+if (missingEnv.length > 0) {
+  console.error('❌ CRITICAL ERROR: Missing environment variables:', missingEnv.join(', '));
+  process.exit(1); // Exit explicitly so we see the error in logs
+}
+
 const app = express();
 
 let CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
