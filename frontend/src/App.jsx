@@ -38,20 +38,6 @@ export default function App() {
   const [convertStatus, setConvertStatus] = useState('');
   const [selectedVoice, setSelectedVoice] = useState(null);
   const [convertedUrl, setConvertedUrl] = useState('');
-  const [user, setUser] = useState(null);
-
-  let AUTH_API = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000';
-  // Fix Render internal hostname issue (e.g. "text-speech-auth" -> "text-speech-auth.onrender.com")
-  if (AUTH_API && !AUTH_API.includes('.') && !AUTH_API.includes('localhost')) {
-    AUTH_API = `${AUTH_API}.onrender.com`;
-  }
-  if (AUTH_API && !AUTH_API.startsWith('http')) {
-    AUTH_API = `https://${AUTH_API}`;
-  }
-  // Add /api suffix if not already present
-  if (!AUTH_API.endsWith('/api')) {
-    AUTH_API = `${AUTH_API}/api`;
-  }
 
   let TTS_API = import.meta.env.VITE_TTS_API_URL || 'http://127.0.0.1:8000';
   // Fix Render internal hostname issue
@@ -61,14 +47,6 @@ export default function App() {
   if (TTS_API && !TTS_API.startsWith('http')) {
     TTS_API = `https://${TTS_API}`;
   }
-
-  // Load logged-in user
-  useEffect(() => {
-    fetch(`${AUTH_API}/auth/me`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => setUser(data.user))
-      .catch(() => setUser(null));
-  }, []);
 
   // Handle click outside filter
   useEffect(() => {
@@ -131,8 +109,7 @@ export default function App() {
       const res = await fetch(`${TTS_API}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice: selectedVoice }),
-        credentials: 'include'
+        body: JSON.stringify({ text, voice: selectedVoice })
       });
       if (res.ok) {
         const blob = await res.blob();
@@ -146,35 +123,10 @@ export default function App() {
     setConverting(false);
   };
 
-  console.log('DEBUG: AUTH_API URL is:', AUTH_API);
   console.log('DEBUG: TTS_API URL is:', TTS_API);
 
   return (
     <div className="app-root">
-      {/* TOP RIGHT LOGIN */}
-      <div style={{
-        position: 'absolute', top: 16, right: 16, zIndex: 1000,
-        background: 'white', padding: '12px 20px', borderRadius: '50px',
-        boxShadow: '0 8px 30px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 14
-      }}>
-        {user ? (
-          <>
-            <img src={user.photo} alt="profile" style={{ width: 40, height: 40, borderRadius: '50%' }} />
-            <span style={{ fontWeight: 600 }}>Hi, {user.name.split(' ')[0]}</span>
-            <a href={`${AUTH_API}/auth/logout`} style={{ color: '#d32f2f', textDecoration: 'none' }}>Logout</a>
-          </>
-        ) : (
-          <a href={`${AUTH_API}/auth/google`} style={{ textDecoration: 'none' }}>
-            <button style={{
-              background: '#4285f4', color: 'white', border: 'none', padding: '10px 24px',
-              borderRadius: '25px', fontWeight: '600', cursor: 'pointer'
-            }}>
-              Login with Google
-            </button>
-          </a>
-        )}
-      </div>
-
       {/* LEFT COLUMN */}
       <div className="left-col">
         <h1 style={{ textAlign: 'center', marginBottom: '10px', fontSize: '60px' }}>Text to Speech</h1>
