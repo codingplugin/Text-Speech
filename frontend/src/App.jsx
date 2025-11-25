@@ -146,6 +146,9 @@ export default function App() {
     setConverting(false);
   };
 
+  console.log('DEBUG: AUTH_API URL is:', AUTH_API);
+  console.log('DEBUG: TTS_API URL is:', TTS_API);
+
   return (
     <div className="app-root">
       {/* TOP RIGHT LOGIN */}
