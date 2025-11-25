@@ -190,15 +190,9 @@ export default function App() {
             <div className="char-count">{count} characters</div>
             <div className="action-row">
               <button type="button" onClick={clearText} disabled={converting} className="btn btn-ghost">Clear</button>
-              {user ? (
-                <button type="button" onClick={handleConvert} disabled={converting} className="btn btn-primary">
-                  {converting ? 'Converting...' : 'Convert'}
-                </button>
-              ) : (
-                <button type="button" onClick={() => window.location.href = `${AUTH_API}/auth/google`} className="btn btn-primary">
-                  Login to Convert
-                </button>
-              )}
+              <button type="button" onClick={handleConvert} disabled={converting} className="btn btn-primary">
+                {converting ? 'Converting...' : 'Convert'}
+              </button>
             </div>
           </div>
           <div className="status">
