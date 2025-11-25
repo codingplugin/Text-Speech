@@ -41,6 +41,10 @@ export default function App() {
   const [user, setUser] = useState(null);
 
   let AUTH_API = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000';
+  // Fix Render internal hostname issue (e.g. "text-speech-auth" -> "text-speech-auth.onrender.com")
+  if (AUTH_API && !AUTH_API.includes('.') && !AUTH_API.includes('localhost')) {
+    AUTH_API = `${AUTH_API}.onrender.com`;
+  }
   if (AUTH_API && !AUTH_API.startsWith('http')) {
     AUTH_API = `https://${AUTH_API}`;
   }
@@ -50,6 +54,10 @@ export default function App() {
   }
 
   let TTS_API = import.meta.env.VITE_TTS_API_URL || 'http://127.0.0.1:8000';
+  // Fix Render internal hostname issue
+  if (TTS_API && !TTS_API.includes('.') && !TTS_API.includes('localhost')) {
+    TTS_API = `${TTS_API}.onrender.com`;
+  }
   if (TTS_API && !TTS_API.startsWith('http')) {
     TTS_API = `https://${TTS_API}`;
   }
