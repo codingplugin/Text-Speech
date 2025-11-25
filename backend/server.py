@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-import edge_tts
+from gtts import gTTS
 import tempfile
 import os
 import time
@@ -18,20 +18,33 @@ def generate():
         text = data.get('text', '').strip()
         voice = data.get('voice', '')
 
-        if not text or not voice:
-            return jsonify({"error": "Text and voice required"}), 400
+        if not text:
+            return jsonify({"error": "Text required"}), 400
 
         # Create temporary file
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
         temp_path = temp_file.name
         temp_file.close()
 
-        # Generate audio using correct method
-        communicate = edge_tts.Communicate(text, voice)
-        communicate.save_sync(temp_path)  # This works perfectly
+        # Determine language based on voice ID (simplified mapping)
+        # Map voice IDs to language codes
+        lang_map = {
+            'en-GB': 'en',
+            'en-US': 'en',
+            'en-AU': 'en',
+            'en-CA': 'en'
+        }
+        
+        # Extract language prefix from voice (e.g., 'en-GB-RyanNeural' -> 'en-GB')
+        lang_prefix = '-'.join(voice.split('-')[:2]) if voice else 'en-US'
+        lang = lang_map.get(lang_prefix, 'en')
+
+        # Generate audio using gTTS
+        tts = gTTS(text=text, lang=lang, slow=False)
+        tts.save(temp_path)
 
         # Send file and delete immediately
-        filename = f"tts-{voice}-{int(time.time())}.mp3"
+        filename = f"tts-{int(time.time())}.mp3"
         response = send_file(
             temp_path,
             mimetype='audio/mpeg',
@@ -55,5 +68,5 @@ def generate():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
-    print(f"TTS SERVER 100% WORKING → http://0.0.0.0:{port}")
+    print(f"TTS SERVER RUNNING → http://0.0.0.0:{port}")
     app.run(host='0.0.0.0', port=port, debug=False)
